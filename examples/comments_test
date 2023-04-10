@@ -1,0 +1,94 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.6 (Ubuntu 13.6-1.pgdg18.04+1)
+-- Dumped by pg_dump version 14.7 (Homebrew)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+
+CREATE SCHEMA human_resource;
+
+--
+-- Name: employees; Type: TABLE; Schema: human_resource; Owner: -
+--
+
+CREATE TABLE human_resource.employees (
+    person_id integer NOT NULL, -- type:id
+    guid uuid NOT NULL,
+    position_guid uuid DEFAULT public.uuid_nil() NOT NULL,
+    "position" text DEFAULT ''::text NOT NULL, -- oneof:['pos1', 'pos2']
+    position_alias text DEFAULT ''::text NOT NULL,
+    org_structure_guid uuid DEFAULT public.uuid_nil() NOT NULL,
+    subdivision_guid uuid DEFAULT public.uuid_nil() NOT NULL,
+    is_active boolean DEFAULT true NOT NULL,
+    is_main boolean NOT NULL,
+    is_head boolean NOT NULL,
+    head_position_guid uuid DEFAULT public.uuid_nil() NOT NULL,
+    head_person_id integer DEFAULT 0 NOT NULL,
+    first_day date,
+    company_prefix text DEFAULT ''::text NOT NULL,
+    employee_number text DEFAULT ''::text NOT NULL,
+    cost_center_guid uuid DEFAULT public.uuid_nil() NOT NULL,
+    cost_center_title text DEFAULT ''::text NOT NULL,
+    bonus_percent numeric(15,2) DEFAULT 0 NOT NULL,
+    bonus_period text DEFAULT ''::text NOT NULL,
+    contract_type smallint DEFAULT 0 NOT NULL,
+    probation_period smallint DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    employee_status_id smallint DEFAULT 1 NOT NULL,
+    dismiss_date timestamp with time zone,
+    grade smallint DEFAULT 0 NOT NULL,
+    position_level_id smallint DEFAULT 0 NOT NULL,
+    position_family_id smallint DEFAULT 0 NOT NULL,
+    probation_last_day date,
+    for_staff boolean DEFAULT false NOT NULL,
+    emp_city text DEFAULT ''::text,
+    emp_street text DEFAULT ''::text,
+    stay_alive boolean DEFAULT true,
+    work_time_rate double precision DEFAULT 0,
+    ga_guid uuid DEFAULT public.uuid_nil(),
+    kpi_group_id uuid DEFAULT public.uuid_nil(),
+    emp_type text DEFAULT ''::text,
+    country text DEFAULT ''::text,
+    region text DEFAULT ''::text,
+    dms_number text -- oneof:['ДМС1', 'ДМС2']
+);
+
+--
+-- Name: persons; Type: TABLE; Schema: human_resource; Owner: -
+--
+
+CREATE TABLE human_resource.persons ( -- count:100
+    id integer NOT NULL,
+    sid text DEFAULT ''::text NOT NULL,
+    login text DEFAULT ''::text NOT NULL,
+    surname text DEFAULT ''::text NOT NULL, -- type:surname_ru
+    name text DEFAULT ''::text NOT NULL, -- type:name_ru
+    patronymic text DEFAULT ''::text NOT NULL, -- type:patronymic_ru
+    surname_en text DEFAULT ''::text NOT NULL, -- type:surname
+    name_en text DEFAULT ''::text NOT NULL ,-- type:name
+    patronymic_en text DEFAULT ''::text NOT NULL,  -- type:patronymic
+    birthdate date, -- range:['01.01.2020', '01.01.2022']
+    city text DEFAULT ''::text NOT NULL, -- type:city
+    street text DEFAULT ''::text NOT NULL, -- type:address
+    photo_url text DEFAULT ''::text NOT NULL,
+    work_phone text DEFAULT ''::text NOT NULL, -- type:phone
+    email text DEFAULT ''::text NOT NULL, -- type:email
+    slack_id text DEFAULT ''::text NOT NULL, -- range:[5, 31]
+    slack_name text DEFAULT ''::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_by integer -- oneof:[1,8,-123]
+);
