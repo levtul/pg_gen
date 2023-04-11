@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/auxten/postgresql-parser/pkg/sql/sem/tree"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"strconv"
 )
 
 type Walker struct {
@@ -70,6 +72,16 @@ func (w *Walker) GetWalkFunc(expr string) func(ctx interface{}, node interface{}
 						Type:    d.Type,
 						NotNull: d.Nullable.Nullability == tree.NotNull,
 					}
+					col := table.Columns[string(d.Name)]
+
+					if val := GetNthGroup(expr, getColumnCommentReg(col.Name), 2); val != "" {
+						gt, err := NewGenerationTypeFromString(val, col.Type)
+						if err != nil {
+							w.Errs = append(w.Errs, fmt.Errorf("%s: \n%s", expr, err))
+							return false
+						}
+						col.GenerationType = gt
+					}
 				case *tree.UniqueConstraintTableDef:
 					if d.PrimaryKey {
 						table.PrimaryKey = make([]string, 0, len(d.Columns))
@@ -80,6 +92,9 @@ func (w *Walker) GetWalkFunc(expr string) func(ctx interface{}, node interface{}
 						columns := make([]string, 0, len(d.Columns))
 						for _, column := range d.Columns {
 							columns = append(columns, column.Column.String())
+						}
+						if len(columns) == 1 {
+							table.Columns[columns[0]].Unique = true
 						}
 						table.UniqueConstraints = append(table.UniqueConstraints, &columns)
 					}
@@ -97,10 +112,15 @@ func (w *Walker) GetWalkFunc(expr string) func(ctx interface{}, node interface{}
 					w.Warnings = append(w.Warnings, fmt.Errorf("%s: \ncheck constraints are not supported, program may fail", expr))
 				}
 			}
+
+			if str := GetNthGroup(expr, createTableCommentReg, 1); str != "" {
+				table.TableGenerationSettings = &TableGenerationSettings{}
+				table.TableGenerationSettings.RowsCount, _ = strconv.Atoi(str)
+			}
 		case *tree.AlterTable:
 			tableName := n.Table.ToTableName()
 			s := tableName.SchemaName.String()
-			if s == "" {
+			if s == "" || s == `""` {
 				s = "public"
 			}
 			schema, ok := w.Schemas[s]
@@ -129,6 +149,9 @@ func (w *Walker) GetWalkFunc(expr string) func(ctx interface{}, node interface{}
 							columns := make([]string, 0, len(d.Columns))
 							for _, column := range d.Columns {
 								columns = append(columns, column.Column.String())
+							}
+							if len(columns) == 1 {
+								table.Columns[columns[0]].Unique = true
 							}
 							table.UniqueConstraints = append(table.UniqueConstraints, &columns)
 						}
@@ -182,4 +205,58 @@ func (w *Walker) GetWalkFunc(expr string) func(ctx interface{}, node interface{}
 
 		return false
 	}
+}
+
+func (w *Walker) GetTablesOrder() ([]*Table, error) {
+	been := map[*Table]int{}
+	order := make([]*Table, 0, len(w.Schemas))
+	stack := make([]*Table, 0, len(w.Schemas))
+
+	for _, schema := range w.Schemas {
+		for _, table := range schema.Tables {
+			if been[table] == 0 {
+				stack = append(stack, table)
+				for len(stack) > 0 {
+					t := stack[len(stack)-1]
+					if been[t] == 1 {
+						order = append(order, t)
+						been[t] = 2
+						stack = stack[:len(stack)-1]
+						continue
+					}
+					been[t] = 1
+
+					for _, fk := range t.ForeignKeyConstraints {
+						if been[fk.Ref.Table] == 1 {
+							return nil, fmt.Errorf("cycle detected in foreign key constraints")
+						}
+						if been[fk.Ref.Table] == 0 {
+							stack = append(stack, fk.Ref.Table)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return order, nil
+}
+
+func (w *Walker) FillAllDB(db *pgxpool.Pool) error {
+	order, err := w.GetTablesOrder()
+	if err != nil {
+		return err
+	}
+
+	for _, table := range order {
+		if err := w.FillDB(table, db); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (w *Walker) FillDB(table *Table, db *pgxpool.Pool) error {
+	return nil
 }

@@ -2,23 +2,32 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
+	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
 	"github.com/auxten/postgresql-parser/pkg/sql/parser"
 	"github.com/auxten/postgresql-parser/pkg/walk"
 )
 
-var (
-	splitter     = regexp.MustCompile("-- Statement # \\d+\n(--[^\n]*\n)*")
-	generatedReg = regexp.MustCompile(`ADD GENERATED (BY DEFAULT|ALWAYS) AS IDENTITY \(\s*SEQUENCE NAME\s*.+START WITH \d+\s*INCREMENT BY \d+\s*NO MINVALUE\s*NO MAXVALUE\s*CACHE \d+\s*\);`)
-)
-
 func main() {
-	path := "examples/comments_test"
+	// get filename & connection string from args
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: ./pgmodeler <filename> <connection_string>")
+		return
+	}
+
+	// get filename
+	filename := os.Args[1]
+
+	// get connection string
+	connectionString := os.Args[2]
+
+	path := filename
 
 	cmd := exec.Command("pg_format", "-N", path)
 
@@ -30,7 +39,7 @@ func main() {
 	}
 
 	sql := stdout.String()
-	exprs := splitter.Split(sql, -1)
+	exprs := splitterReg.Split(sql, -1)
 	myWalker := NewWalker()
 	w := &walk.AstWalker{}
 	for _, expr := range exprs {
@@ -43,7 +52,7 @@ func main() {
 
 			stmts, err := parser.Parse(expr)
 			if err != nil {
-				fmt.Print(err, " ", expr)
+				fmt.Printf("error: %s, expr: \n%s", err, expr)
 				return
 			}
 
@@ -51,8 +60,43 @@ func main() {
 			_, _ = w.Walk(stmts, nil)
 		}
 	}
-	fmt.Println(myWalker.Schemas)
-	fmt.Println(myWalker.Errs)
-	//fmt.Println(myWalker.Warnings)
+
+	if len(myWalker.Errs) > 0 {
+		for _, err := range myWalker.Errs {
+			fmt.Printf("error: %s\n", err)
+		}
+		return
+	}
+	if len(myWalker.Warnings) > 0 {
+		for _, warning := range myWalker.Warnings {
+			fmt.Printf("warning: %s", warning)
+		}
+	}
+
+	// connect to postgresql database
+	databaseUrl := connectionString
+
+	// this returns connection pool
+	dbPool, err := pgxpool.Connect(context.Background(), databaseUrl)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+
+	defer dbPool.Close()
+
+	err = dbPool.Ping(context.Background())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to ping database: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = myWalker.FillAllDB(dbPool)
+	if err != nil {
+		fmt.Printf("error: %s", err)
+		return
+	}
+
 	return
 }

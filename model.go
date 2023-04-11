@@ -2,50 +2,11 @@ package main
 
 import "github.com/auxten/postgresql-parser/pkg/sql/types"
 
-type GenerationPreset = int
-
-const (
-	GenerationPresetName GenerationPreset = iota
-	GenerationPresetSurname
-	GenerationPresetPatronymic
-	GenerationPresetNameRu
-	GenerationPresetSurnameRu
-	GenerationPresetPatronymicRu
-	GenerationPresetAddress
-	GenerationPresetAddressRu
-	GenerationPresetPhone
-	GenerationPresetEmail
-)
-
-type GenerationTypeOneof struct {
-	Values []interface{}
-}
-
-type GenerationTypeRange struct {
-	From interface{}
-	To   interface{}
-}
-
-type GenerationTypePreset struct {
-	Preset GenerationPreset
-}
-
-type GenerationType interface {
-	generationType()
-}
-
-func (GenerationTypeOneof) generationType()  {}
-func (GenerationTypeRange) generationType()  {}
-func (GenerationTypePreset) generationType() {}
-
-type TableGenerationSettings struct {
-	RowsCount int
-}
-
 type Column struct {
 	Name    string
 	Type    *types.T
 	NotNull bool
+	Unique  bool
 
 	GenerationType *GenerationType
 }
