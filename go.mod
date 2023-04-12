@@ -3,8 +3,11 @@ module github.com/levtul/tmp
 go 1.19
 
 require (
+	github.com/Masterminds/squirrel v1.5.4
 	github.com/auxten/postgresql-parser v1.0.1
+	github.com/google/uuid v1.1.2
 	github.com/jackc/pgx/v4 v4.18.1
+	github.com/lib/pq v1.10.2
 )
 
 require (
@@ -30,7 +33,8 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.10.2 // indirect
+	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
+	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

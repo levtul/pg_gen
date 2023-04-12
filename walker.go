@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/auxten/postgresql-parser/pkg/sql/sem/tree"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"strconv"
@@ -248,8 +250,9 @@ func (w *Walker) FillAllDB(db *pgxpool.Pool) error {
 		return err
 	}
 
+	generatedData := map[*Table]map[string][]interface{}{}
 	for _, table := range order {
-		if err := w.FillDB(table, db); err != nil {
+		if err := w.fillDB(table, db, generatedData); err != nil {
 			return err
 		}
 	}
@@ -257,6 +260,34 @@ func (w *Walker) FillAllDB(db *pgxpool.Pool) error {
 	return nil
 }
 
-func (w *Walker) FillDB(table *Table, db *pgxpool.Pool) error {
-	return nil
+func (w *Walker) fillDB(table *Table, db *pgxpool.Pool, data map[*Table]map[string][]interface{}) error {
+	stmt := sq.Insert(table.Name)
+	columns := make([]*Column, 0, len(table.Columns))
+	for _, column := range table.Columns {
+		columns = append(columns, column)
+		stmt = stmt.Columns(column.Name)
+	}
+	//d := map[string][]interface{}{}
+
+	if table.TableGenerationSettings == nil {
+		table.TableGenerationSettings = &TableGenerationSettings{RowsCount: 100}
+	}
+	for i := 0; i < table.TableGenerationSettings.RowsCount; i++ {
+		row := make([]interface{}, 0, len(table.Columns))
+		for _, column := range columns {
+			row = append(row, column.GenerateValue())
+		}
+		stmt = stmt.Values(row...)
+	}
+
+	//stmt.Suffix("ON CONFLICT DO NOTHING")
+	sql, values, err := stmt.PlaceholderFormat(sq.Dollar).ToSql()
+	if err != nil {
+		return err
+	}
+	tx, err := db.Begin(context.Background())
+	_, err = tx.Exec(context.Background(), sql, values...)
+	err = tx.Commit(context.Background())
+
+	return err
 }

@@ -89,15 +89,15 @@ type GenerationTypePreset struct {
 }
 
 type GenerationType interface {
-	GenerationType()
+	generationType()
 	CommentString() string
 	ValidateType(t *types.T) error
 	SetValue(v string) error
 }
 
-func (*GenerationTypeOneof) GenerationType()  {}
-func (*GenerationTypeRange) GenerationType()  {}
-func (*GenerationTypePreset) GenerationType() {}
+func (*GenerationTypeOneof) generationType()  {}
+func (*GenerationTypeRange) generationType()  {}
+func (*GenerationTypePreset) generationType() {}
 
 func (*GenerationTypeOneof) CommentString() string {
 	return "oneof"

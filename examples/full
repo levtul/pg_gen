@@ -97,7 +97,6 @@ CREATE EXTENSION IF NOT EXISTS pg_funczon WITH SCHEMA public;
 -- Name: EXTENSION pg_funczon; Type: COMMENT; Schema: -; Owner: -
 --
 
-COMMENT ON EXTENSION pg_funczon IS 'Bunch of pg functions & views commonly used in ozon DBaaS infrastructure';
 
 
 --
