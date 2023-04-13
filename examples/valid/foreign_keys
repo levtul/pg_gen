@@ -1,0 +1,32 @@
+
+CREATE TABLE profile_types
+(   -- count:3
+    profile_type TEXT PRIMARY KEY -- oneof:[simple,pro,admin]
+);
+
+CREATE TABLE users
+( -- count:10
+    id         INT PRIMARY KEY UNIQUE,
+    name       TEXT,         -- type:name
+    surname    TEXT,         -- type:surname
+    age        INT NOT NULL, -- oneof:[1,23,4]
+    birthday   DATE,
+    updated_at TIMESTAMP WITH TIME ZONE
+);
+
+ALTER TABLE users
+    ADD UNIQUE (name, surname),
+    ADD UNIQUE (id, name, surname);
+
+CREATE TABLE profiles
+(
+    id           uuid PRIMARY KEY,
+    user_id      INT,
+    user_name    TEXT,
+    user_surname TEXT,
+    created_at   TIMESTAMP,
+    profile_type TEXT REFERENCES profile_types (profile_type)
+);
+
+ALTER TABLE profiles
+    ADD FOREIGN KEY (user_id, user_name, user_surname) REFERENCES users (id, name, surname);

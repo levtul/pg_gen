@@ -1,7 +1,0 @@
-CREATE TABLE b (
-    x INT PRIMARY KEY,
-    name text, -- type:name_ru
-    address text, -- type:address
-    phone text, -- type:phone
-    z int -- oneof:[1,
-);
