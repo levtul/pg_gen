@@ -17,18 +17,22 @@ import (
 func main() {
 	// get filename & connection string from args
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: ./pgmodeler <filename> <connection_string>")
+		fmt.Println("Usage: ./pg_gen <filename> <connection_string>")
 		return
 	}
 
 	// get filename
 	filename := os.Args[1]
-	filename = "examples/no_generation"
+	//filename = "examples/simple_generation"
 
 	// get connection string
 	connectionString := os.Args[2]
 
 	path := filename
+	_, err := os.ReadFile(path)
+	if err != nil {
+		log.Fatalf("cannot read file %s", path)
+	}
 
 	cmd := exec.Command("pg_format", "-N", path)
 
@@ -98,6 +102,8 @@ func main() {
 		fmt.Printf("error: %s", err)
 		return
 	}
+
+	fmt.Println("Successfully generated data!")
 
 	return
 }

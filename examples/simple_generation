@@ -1,0 +1,7 @@
+CREATE TABLE b ( -- count:10
+    x INT PRIMARY KEY,
+    name text, -- type:name_ru
+    address text, -- type:address
+    phone text NOT NULL, -- type:phone
+    z int -- oneof:[1, 3]
+);

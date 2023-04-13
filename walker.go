@@ -82,7 +82,7 @@ func (w *Walker) GetWalkFunc(expr string) func(ctx interface{}, node interface{}
 							w.Errs = append(w.Errs, fmt.Errorf("%s: \n%s", expr, err))
 							return false
 						}
-						col.GenerationType = gt
+						col.GenerationType = *gt
 					}
 				case *tree.UniqueConstraintTableDef:
 					if d.PrimaryKey {
@@ -287,6 +287,10 @@ func (w *Walker) fillDB(table *Table, db *pgxpool.Pool, data map[*Table]map[stri
 	}
 	tx, err := db.Begin(context.Background())
 	_, err = tx.Exec(context.Background(), sql, values...)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
 	err = tx.Commit(context.Background())
 
 	return err

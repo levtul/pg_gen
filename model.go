@@ -28,7 +28,7 @@ type Column struct {
 	NotNull bool
 	Unique  bool
 
-	GenerationType *GenerationType
+	GenerationType GenerationType
 }
 
 func (c Column) GenerateValue() interface{} {
@@ -61,6 +61,8 @@ func (c Column) GenerateValue() interface{} {
 		default:
 			return nil
 		}
+	} else {
+		return c.GenerationType.GenerateValue()
 	}
 
 	return nil

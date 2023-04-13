@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/auxten/postgresql-parser/pkg/sql/types"
+	"github.com/go-faker/faker/v4"
+	"math/rand"
+	"reflect"
 	"strings"
 )
 
@@ -93,6 +96,7 @@ type GenerationType interface {
 	CommentString() string
 	ValidateType(t *types.T) error
 	SetValue(v string) error
+	GenerateValue() interface{}
 }
 
 func (*GenerationTypeOneof) generationType()  {}
@@ -180,6 +184,48 @@ func (gtp *GenerationTypePreset) ValidateType(t *types.T) error {
 		}
 	default:
 		return fmt.Errorf("unknown generation preset: %s", String(gtp.Preset))
+	}
+
+	return nil
+}
+
+func (gto *GenerationTypeOneof) GenerateValue() interface{} {
+	return gto.Values[rand.Intn(len(gto.Values))]
+}
+
+func (gtr *GenerationTypeRange) GenerateValue() interface{} {
+	return nil
+}
+
+func (gtp *GenerationTypePreset) GenerateValue() interface{} {
+	switch gtp.Preset {
+	case GenerationPresetName:
+		return faker.FirstName()
+	case GenerationPresetSurname:
+		return faker.LastName()
+	case GenerationPresetPatronymic:
+		return faker.FirstNameMale()
+	case GenerationPresetNameRu:
+		s, _ := faker.GetPerson().RussianFirstNameMale(reflect.Value{})
+		return s
+	case GenerationPresetSurnameRu:
+		s, _ := faker.GetPerson().RussianLastNameMale(reflect.Value{})
+		return s
+	case GenerationPresetPatronymicRu:
+		s, _ := faker.GetPerson().RussianFirstNameMale(reflect.Value{})
+		return s
+	case GenerationPresetAddress:
+		addr, _ := faker.GetAddress().RealWorld(reflect.Value{})
+		a := addr.(faker.RealAddress)
+		return a.Address
+	case GenerationPresetAddressRu:
+		addr, _ := faker.GetAddress().RealWorld(reflect.Value{})
+		a := addr.(faker.RealAddress)
+		return a.Address
+	case GenerationPresetPhone:
+		return faker.Phonenumber()
+	case GenerationPresetEmail:
+		return faker.Email()
 	}
 
 	return nil

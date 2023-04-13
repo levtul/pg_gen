@@ -1,7 +1,0 @@
-CREATE TABLE a
-(
-    x INT PRIMARY KEY,
-    y text,
-    z bool,
-    b date
-);
