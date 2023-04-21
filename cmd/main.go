@@ -15,7 +15,6 @@ func main() {
 
 	// get filename
 	filename := os.Args[1]
-	filename = "examples/valid/foreign_keys"
 
 	// get connection string
 	connectionString := os.Args[2]
